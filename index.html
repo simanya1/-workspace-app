@@ -1,0 +1,2451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a221a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="个人工作台" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
+  <title>个人工作台</title>
+  <style>
+    :root {
+      --bg: #1a221a;
+      --bg-soft: #1f2a1f;
+      --surface: #243224;
+      --surface-2: #2a3a2a;
+      --primary: #7eb06a;
+      --primary-dark: #55804a;
+      --accent: #b6dc9e;
+      --text: #eaf2e7;
+      --text-2: #a5b8a1;
+      --text-3: #768a73;
+      --border: #304030;
+      --danger: #d97777;
+      --coffee: #b08968;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    /* ===== Top bar ===== */
+    .topbar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      z-index: 20;
+    }
+    .menu-btn {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface);
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+    }
+    .menu-btn svg { width: 22px; height: 22px; stroke: var(--text); }
+    .topbar-title {
+      flex: 1;
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .topbar-sub {
+      font-size: 12px;
+      color: var(--text-2);
+      margin-left: 2px;
+    }
+    .topbar-right { display: flex; gap: 8px; }
+    .icon-btn {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface);
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+    }
+    .icon-btn svg { width: 20px; height: 20px; stroke: var(--text-2); fill: none; stroke-width: 2; }
+
+    /* ===== Sidebar ===== */
+    .sidebar-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+      z-index: 40;
+    }
+    .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 280px;
+      background: var(--bg-soft);
+      transform: translateX(-100%);
+      transition: transform .3s cubic-bezier(.4,0,.2,1);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    .sidebar-header {
+      padding: 22px 18px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700;
+      color: var(--bg);
+    }
+    .sidebar-user .name { font-size: 16px; font-weight: 600; }
+    .sidebar-user .date { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+    .nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    .nav-group-title {
+      padding: 14px 18px 6px;
+      font-size: 11px;
+      color: var(--text-3);
+      letter-spacing: 1px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 18px;
+      cursor: pointer;
+      color: var(--text-2);
+      border-left: 3px solid transparent;
+      transition: background .15s;
+    }
+    .nav-item:active { background: var(--surface); }
+    .nav-item.active {
+      color: var(--text);
+      background: var(--surface);
+      border-left-color: var(--primary);
+    }
+    .nav-item .ico {
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .nav-item .label { flex: 1; font-size: 14px; }
+    .nav-item .badge {
+      min-width: 20px; height: 20px;
+      padding: 0 6px;
+      border-radius: 10px;
+      background: var(--primary-dark);
+      color: var(--accent);
+      font-size: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600;
+    }
+
+    .sidebar-footer {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-3);
+    }
+
+    /* ===== Main content ===== */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px;
+      padding-bottom: 80px;
+    }
+
+    .view { display: none; animation: fade .25s; }
+    .view.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(6px);} to {opacity:1; transform:none;} }
+
+    /* ===== Greeting card ===== */
+    .greeting {
+      background: linear-gradient(135deg, #345434 0%, #55804a 100%);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .greeting::after {
+      content: "✨";
+      position: absolute;
+      right: 18px; top: 18px;
+      font-size: 24px;
+      opacity: .9;
+    }
+    .greeting h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .greeting .g-date { font-size: 12px; opacity: .85; margin-bottom: 16px; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat .num { font-size: 20px; font-weight: 700; }
+    .stat .lbl { font-size: 10px; opacity: .8; margin-top: 2px; }
+    .stat .ring {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(255,255,255,.25);
+      border-top-color: var(--accent);
+      margin: 0 auto 4px;
+    }
+
+    /* ===== Cards ===== */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .card-title .emoji { font-size: 18px; }
+    .card-actions { display: flex; gap: 8px; }
+    .btn-add {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .btn-add:active { background: var(--primary-dark); }
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text-2);
+      border: none;
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* ===== Water grid ===== */
+    .water-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .water-cell {
+      aspect-ratio: 1;
+      border-radius: 14px;
+      background: var(--surface-2);
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+    }
+    .water-cell.drunk {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-color: var(--accent);
+    }
+    .water-cell.drunk::after {
+      content: "💧";
+      font-size: 22px;
+    }
+    .water-cell:active { transform: scale(.92); }
+    .water-info {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-2);
+    }
+
+    /* ===== Task list ===== */
+    .task-list { display: flex; flex-direction: column; gap: 10px; }
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border-radius: 12px;
+    }
+    .check {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--text-3);
+      flex-shrink: 0;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .check.done {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+    .check.done::after {
+      content: "✓";
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .task-text {
+      flex: 1;
+      font-size: 14px;
+    }
+    .task.done .task-text {
+      color: var(--text-3);
+      text-decoration: line-through;
+    }
+    .task-del {
+      background: none; border: none;
+      color: var(--text-3);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+    }
+    .task-del:active { color: var(--danger); }
+
+    .empty {
+      text-align: center;
+      color: var(--text-3);
+      font-size: 13px;
+      padding: 20px 0;
+    }
+
+    /* ===== Habit grid ===== */
+    .habit-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .habit {
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 14px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all .2s;
+    }
+    .habit.done {
+      border-color: var(--primary);
+      background: rgba(107,154,91,.15);
+    }
+    .habit-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .habit-emoji { font-size: 22px; }
+    .habit-name { font-size: 14px; font-weight: 600; flex: 1; }
+    .habit-streak {
+      font-size: 11px;
+      color: var(--accent);
+      background: var(--surface);
+      padding: 2px 8px;
+      border-radius: 8px;
+    }
+    .habit-bar {
+      height: 6px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .habit-bar > i {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 3px;
+      transition: width .3s;
+    }
+
+    /* ===== Entry (inspiration / gratitude) ===== */
+    .entry {
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .entry-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .entry-date { font-size: 12px; color: var(--text-3); }
+    .entry-text {
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .entry-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .chip {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text-2);
+    }
+
+    /* ===== Input / textarea ===== */
+    .input, .textarea {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    .textarea { min-height: 120px; resize: vertical; line-height: 1.7; }
+    .input:focus, .textarea:focus { border-color: var(--primary); }
+
+    /* ===== Modal ===== */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.6);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 60;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      width: 100%;
+      max-width: 500px;
+      background: var(--bg-soft);
+      border-radius: 20px 20px 0 0;
+      padding: 20px;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: slideUp .25s;
+    }
+    @keyframes slideUp { from { transform: translateY(100%);} to { transform: none;} }
+    .modal h3 { margin-bottom: 14px; font-size: 17px; }
+    .modal .field { margin-bottom: 14px; }
+    .modal label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 6px; }
+    .modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-cancel { background: var(--surface-2); color: var(--text-2); }
+
+    /* ===== Report (weekly/monthly) ===== */
+    .report-section { margin-bottom: 16px; }
+    .report-section h4 {
+      font-size: 14px;
+      color: var(--accent);
+      margin-bottom: 10px;
+      padding-left: 8px;
+      border-left: 3px solid var(--primary);
+    }
+    .report-item {
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .report-meta { font-size: 11px; color: var(--text-3); margin-top: 6px; }
+
+    /* ===== Comparison section (reports & daily summary) ===== */
+    .compare-section {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 10px;
+    }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .compare-card {
+      background: var(--surface-2);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .compare-card .label {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 4px;
+    }
+    .compare-card .val {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .compare-card .delta {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+    .delta.up { color: var(--primary); }
+    .delta.down { color: var(--danger); }
+    .delta.flat { color: var(--text-3); }
+
+    /* ===== Water input controls ===== */
+    .water-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .water-controls .type-toggle {
+      display: flex;
+      gap: 6px;
+    }
+    .type-chip {
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-2);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .type-chip.active {
+      border-color: var(--primary);
+      background: rgba(126,176,106,.15);
+      color: var(--text);
+    }
+    .type-chip.coffee.active {
+      border-color: var(--coffee);
+      background: rgba(176,137,104,.15);
+      color: var(--coffee);
+    }
+    .ml-input-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 140px;
+    }
+    .ml-input-group input {
+      flex: 1;
+      width: 60px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      text-align: center;
+    }
+    .ml-input-group input:focus { border-color: var(--primary); }
+    .ml-quick {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .ml-quick button {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-2);
+      padding: 5px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .ml-quick button:active { background: var(--primary-dark); color: #fff; }
+
+    /* ===== Video / Xiaohongshu cards ===== */
+    .video-card {
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .video-card .vc-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .vc-cat {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .vc-cat.mom { background: rgba(217,119,119,.2); color: #e8a0a0; }
+    .vc-cat.parenting { background: rgba(126,176,106,.2); color: var(--accent); }
+    .vc-cat.ai { background: rgba(104,160,210,.2); color: #8cc0e8; }
+    .vc-cat.own { background: rgba(176,137,104,.2); color: var(--coffee); }
+    .vc-title { font-size: 14px; font-weight: 600; flex: 1; }
+    .vc-section { margin-top: 8px; }
+    .vc-section .vc-label {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 4px;
+    }
+    .vc-section .vc-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-2);
+    }
+    .vc-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .vc-platform {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text-3);
+    }
+
+    /* ===== Daily summary ===== */
+    .summary-box {
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .summary-text {
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ===== Bottom nav (mobile) ===== */
+    .bottom-nav {
+      flex-shrink: 0;
+      display: flex;
+      background: var(--bg-soft);
+      border-top: 1px solid var(--border);
+      padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+    }
+    .bn-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 0;
+      cursor: pointer;
+      color: var(--text-3);
+      font-size: 11px;
+    }
+    .bn-item.active { color: var(--primary); }
+    .bn-item .bn-ico { font-size: 20px; }
+
+    /* ===== Date switcher ===== */
+    .date-switch {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .date-switch button {
+      background: var(--surface-2);
+      border: none;
+      color: var(--text-2);
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .date-switch .cur { font-size: 14px; font-weight: 600; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(40,55,40,.95);
+      color: var(--accent);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity .2s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 0; height: 0; }
+
+    @media (min-width: 768px) {
+      body { flex-direction: row; }
+      .sidebar {
+        position: static;
+        transform: none;
+        width: 280px;
+        border-right: 1px solid var(--border);
+      }
+      .sidebar-overlay { display: none; }
+      .menu-btn { display: none; }
+      .main-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+      .bottom-nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar-overlay" id="overlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="avatar" id="avatar">馒</div>
+      <div class="sidebar-user">
+        <div class="name" id="userName">馒头</div>
+        <div class="date" id="todayDate"></div>
+      </div>
+    </div>
+    <nav class="nav" id="navList"></nav>
+    <div class="sidebar-footer">个人工作台 · v1.0</div>
+  </aside>
+
+  <div class="main-wrap">
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div>
+        <div class="topbar-title" id="pageTitle">每日计划</div>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="installBtn" title="安装APP" style="display:none">
+          <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="icon-btn" id="addBtn" title="新增">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main" id="main"></main>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+      <div class="bn-item active" data-view="home"><div class="bn-ico">🏠</div>首页</div>
+      <div class="bn-item" data-view="plan"><div class="bn-ico">📋</div>计划</div>
+      <div class="bn-item" data-view="inspiration"><div class="bn-ico">💡</div>灵感</div>
+      <div class="bn-item" data-view="gratitude"><div class="bn-ico">🙏</div>感恩</div>
+      <div class="bn-item" data-view="me"><div class="bn-ico">📱</div>我的</div>
+    </nav>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal" id="modalBox"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ===== Data layer (localStorage) =====
+    const STORE = 'workspace_v2';
+    const defaultData = {
+      user: { name: '馒头' },
+      tasks: {},          // date -> [{id, text, done}]
+      water: {},          // date -> total ml (deprecated, kept for migration)
+      waterLog: {},       // date -> [{id, type:'water'|'coffee', ml, time}]
+      waterGoal: 1500,    // daily water goal in ml
+      habits: [           // default habits
+        { id:'h1', name:'喝水 1500ml', emoji:'💧', target:8, done:0 },
+        { id:'h2', name:'运动 30 分钟', emoji:'🏃', target:1, done:0 },
+        { id:'h3', name:'阅读 20 分钟', emoji:'📖', target:1, done:0 },
+        { id:'h4', name:'冥想 10 分钟', emoji:'🧘', target:1, done:0 },
+      ],
+      habitLog: {},       // habitId_date -> 1
+      inspiration: [],    // {id, date, text}
+      gratitude: [],      // {id, date, text}
+      dailySummary: {},    // date -> text
+      weekly: [],         // {id, period, date, sections:{summary, achievements, issues, next, compare}}
+      monthly: [],        // {id, period, date, sections:{summary, achievements, issues, next, compare}}
+      videos: [],         // {id, date, type, platform, title, analysis, topic, notes}
+      english: {},        // date -> [{id, word, meaning, done}]
+      spanish: {},        // date -> [{id, word, meaning, done}]
+      weight: [],         // {id, date, weight, note}
+      period: [],         // {id, date, type:'start'|'end', flow, symptoms, note}
+      doushaFun: [],      // {id, date, text}
+      doushaDaily: {},    // date -> text (每日记录，自由记录豆沙一天的情况)
+      doushaCheckin: {},  // date -> [{id, text, done}]
+      doushaGrowth: [],   // {id, date, weight, height, note}
+      news: [],           // placeholders
+    };
+    let db = load();
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORE);
+        if (raw) return { ...defaultData, ...JSON.parse(raw) };
+      } catch(e){}
+      return JSON.parse(JSON.stringify(defaultData));
+    }
+    function save() { localStorage.setItem(STORE, JSON.stringify(db)); }
+
+    const today = () => new Date().toISOString().slice(0,10);
+    const fmtDate = (d) => {
+      const dt = new Date(d);
+      const wd = ['周日','周一','周二','周三','周四','周五','周六'][dt.getDay()];
+      return `${dt.getMonth()+1}月${dt.getDate()}日 ${wd}`;
+    };
+    const uid = () => Math.random().toString(36).slice(2,10);
+
+    // ===== Navigation config =====
+    const navGroups = [
+      { title: '', items: [
+        { id:'home', label:'工作台', emoji:'🏠' },
+        { id:'plan', label:'每日计划', emoji:'✓', key:'tasks' },
+        { id:'habit', label:'习惯打卡', emoji:'✓' },
+        { id:'inspiration', label:'每日灵感', emoji:'✦', key:'inspiration' },
+        { id:'gratitude', label:'每日感恩', emoji:'🙏', key:'gratitude' },
+        { id:'news', label:'每日新闻', emoji:'📰', badge: 0 },
+      ]},
+      { title: '记录', items: [
+        { id:'weekly', label:'周报', emoji:'📅', key:'weekly' },
+        { id:'monthly', label:'月报', emoji:'📆', key:'monthly' },
+      ]},
+      { title: '创作', items: [
+        { id:'videos', label:'爆款视频分析', emoji:'🔥', key:'videos' },
+      ]},
+      { title: '豆沙', items: [
+        { id:'dousha-fun', label:'每日趣事', emoji:'🌟', key:'doushaFun' },
+        { id:'dousha-daily', label:'每日记录', emoji:'📔', key:'doushaDaily' },
+        { id:'dousha-checkin', label:'每日打卡', emoji:'✅', key:'doushaCheckin' },
+        { id:'dousha-growth', label:'体重身高记录', emoji:'📏', key:'doushaGrowth' },
+      ]},
+      { title: '日常', items: [
+        { id:'life', label:'生活琐事', emoji:'🏡', badge: 0 },
+      ]},
+      { title: '工作', items: [
+        { id:'work', label:'工作项目', emoji:'💼', badge: 0 },
+      ]},
+      { title: '学习 & 健康', items: [
+        { id:'english', label:'英语单词', emoji:'🔤' },
+        { id:'spanish', label:'西语单词', emoji:'🇪🇸' },
+        { id:'fitness', label:'健身拉伸10分钟', emoji:'🧘' },
+        { id:'weight', label:'体重管理', emoji:'⚖️', key:'weight' },
+        { id:'period', label:'月经记录', emoji:'🌸', key:'period' },
+        { id:'diet', label:'饮食管理', emoji:'🥗' },
+      ]},
+    ];
+
+    let currentView = 'home';
+
+    function renderNav() {
+      const list = document.getElementById('navList');
+      list.innerHTML = navGroups.map(g => {
+        const items = g.items.map(it => {
+          let badge = '';
+          if (it.key && db[it.key]) {
+            const n = Array.isArray(db[it.key]) ? db[it.key].length : 0;
+            if (n) badge = `<span class="badge">${n}</span>`;
+          } else if (it.badge) {
+            badge = `<span class="badge">${it.badge}</span>`;
+          }
+          return `<div class="nav-item ${currentView===it.id?'active':''}" data-view="${it.id}">
+            <span class="ico">${it.emoji}</span>
+            <span class="label">${it.label}</span>
+            ${badge}
+          </div>`;
+        }).join('');
+        const title = g.title ? `<div class="nav-group-title">${g.title}</div>` : '';
+        return title + items;
+      }).join('');
+
+      list.querySelectorAll('.nav-item').forEach(el => {
+        el.onclick = () => switchView(el.dataset.view);
+      });
+    }
+
+    function switchView(view) {
+      currentView = view;
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+      renderNav();
+      renderView();
+      document.querySelectorAll('.bn-item').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === view || (view==='weekly'||view==='monthly')&&b.dataset.view==='report');
+      });
+    }
+
+    // ===== Views =====
+    function renderView() {
+      const main = document.getElementById('main');
+      const titleMap = {
+        home:'工作台', plan:'每日计划', habit:'习惯打卡', inspiration:'每日灵感',
+        gratitude:'每日感恩', news:'每日新闻', weekly:'周报', monthly:'月报',
+        videos:'爆款视频分析',
+        'dousha-fun':'每日趣事', 'dousha-daily':'每日记录', 'dousha-checkin':'每日打卡', 'dousha-growth':'体重身高记录',
+        life:'生活琐事', work:'工作项目',
+        english:'英语单词', spanish:'西语单词', fitness:'健身拉伸10分钟',
+        weight:'体重管理', period:'月经记录', diet:'饮食管理', me:'我的'
+      };
+      document.getElementById('pageTitle').textContent = titleMap[currentView] || '工作台';
+
+      const addBtn = document.getElementById('addBtn');
+      const addable = ['plan','inspiration','gratitude','weekly','monthly','habit','videos',
+        'english','spanish','weight','period','dousha-fun','dousha-daily','dousha-checkin','dousha-growth'];
+      addBtn.style.display = addable.includes(currentView) ? 'flex' : 'none';
+
+      switch(currentView) {
+        case 'home': main.innerHTML = viewHome(); break;
+        case 'plan': main.innerHTML = viewPlan(); break;
+        case 'habit': main.innerHTML = viewHabit(); break;
+        case 'inspiration': main.innerHTML = viewInspiration(); break;
+        case 'gratitude': main.innerHTML = viewGratitude(); break;
+        case 'weekly': main.innerHTML = viewReport('weekly'); break;
+        case 'monthly': main.innerHTML = viewReport('monthly'); break;
+        case 'videos': main.innerHTML = viewVideos(); break;
+        case 'english': main.innerHTML = viewWords('english','英语单词'); break;
+        case 'spanish': main.innerHTML = viewWords('spanish','西语单词'); break;
+        case 'fitness': main.innerHTML = viewFitness(); break;
+        case 'weight': main.innerHTML = viewWeight(); break;
+        case 'period': main.innerHTML = viewPeriod(); break;
+        case 'dousha-fun': main.innerHTML = viewDoushaFun(); break;
+        case 'dousha-daily': main.innerHTML = viewDoushaDaily(); break;
+        case 'dousha-checkin': main.innerHTML = viewDoushaCheckin(); break;
+        case 'dousha-growth': main.innerHTML = viewDoushaGrowth(); break;
+        case 'news': main.innerHTML = viewPlaceholder('每日新闻','📰','每日精选资讯，稍后接入'); break;
+        case 'life': main.innerHTML = viewPlaceholder('生活琐事','🏡','记录生活中的待办事项'); break;
+        case 'work': main.innerHTML = viewPlaceholder('工作项目','💼','管理工作任务与项目'); break;
+        case 'diet': main.innerHTML = viewPlaceholder('饮食管理','🥗','记录每日饮食'); break;
+        case 'me': main.innerHTML = viewMe(); break;
+        default: main.innerHTML = viewHome();
+      }
+      bindViewEvents();
+    }
+
+    // ===== Water helpers =====
+    function getWaterTotal(d) {
+      const logs = db.waterLog[d] || [];
+      return logs.reduce((s,l)=> s + (l.ml||0), 0);
+    }
+    function getCoffeeTotal(d) {
+      const logs = db.waterLog[d] || [];
+      return logs.filter(l=>l.type==='coffee').reduce((s,l)=> s + (l.ml||0), 0);
+    }
+
+    // --- Home ---
+    function viewHome() {
+      const d = today();
+      const tasks = db.tasks[d] || [];
+      const done = tasks.filter(t=>t.done).length;
+      const waterMl = getWaterTotal(d);
+      const coffeeMl = getCoffeeTotal(d);
+      const goal = db.waterGoal || 1500;
+      const hour = new Date().getHours();
+      const greet = hour<6?'夜深了，早点休息':hour<12?'早上好，元气满满':hour<14?'中午好，记得午休':hour<18?'下午好，今天也要加油呀':'晚上好，辛苦一天了';
+
+      const habitTotal = db.habits.length;
+      const habitDone = db.habits.filter(h=>db.habitLog[h.id+'_'+d]).length;
+
+      const wLogs = db.waterLog[d] || [];
+
+      return `
+        <div class="greeting">
+          <h2>${greet} ✨</h2>
+          <div class="g-date">${fmtDate(d)}</div>
+          <div class="stats">
+            <div class="stat"><div class="num">${waterMl}ml</div><div class="lbl">喝水/${goal}</div></div>
+            <div class="stat"><div class="num">${habitDone}/${habitTotal}</div><div class="lbl">习惯打卡</div></div>
+            <div class="stat"><div class="num">${done}/${tasks.length}</div><div class="lbl">任务完成</div></div>
+            <div class="stat"><div class="num">${db.inspiration.length}</div><div class="lbl">灵感记录</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="emoji">💧</span>今日饮水</div>
+            <div class="card-actions">
+              <button class="btn-ghost" id="resetWater">清空</button>
+            </div>
+          </div>
+          <div class="water-controls">
+            <div class="type-toggle">
+              <div class="type-chip active" data-wtype="water">💧 水</div>
+              <div class="type-chip coffee" data-wtype="coffee">☕ 黑咖啡</div>
+            </div>
+            <div class="ml-input-group">
+              <input type="number" id="waterMl" placeholder="ml" value="200" min="1" max="2000" />
+              <button class="btn-add" id="addWater" style="padding:7px 12px">+</button>
+            </div>
+          </div>
+          <div class="ml-quick">
+            <button data-quickml="100">+100</button>
+            <button data-quickml="200">+200</button>
+            <button data-quickml="250">+250</button>
+            <button data-quickml="500">+500</button>
+          </div>
+          <div class="water-info" style="margin-top:10px">
+            💧 已喝 ${waterMl}ml · 还差 ${Math.max(0,goal-waterMl)}ml
+            ${coffeeMl?` · ☕ 咖啡 ${coffeeMl}ml`:''}
+          </div>
+          ${wLogs.length?`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">
+            ${wLogs.slice().reverse().map(l=>`<span class="chip" style="${l.type==='coffee'?'color:var(--coffee)':''}">${l.type==='coffee'?'☕':'💧'} ${l.ml}ml ×</span>`).join('')}
+          </div>`:''}
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="emoji">📋</span>今日计划</div>
+            <div class="card-actions">
+              <button class="btn-add" data-goto="plan">+ 新增任务</button>
+            </div>
+          </div>
+          ${tasks.length?`<div class="task-list">${tasks.map(t=>`
+            <div class="task ${t.done?'done':''}" data-id="${t.id}">
+              <div class="check ${t.done?'done':''}" data-toggle="${t.id}"></div>
+              <div class="task-text">${t.text}</div>
+              <button class="task-del" data-del="${t.id}">×</button>
+            </div>`).join('')}</div>`:'<div class="empty">今天还没有计划，点击右上角 + 添加</div>'}
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="emoji">📝</span>今日总结</div>
+            <div class="card-actions"><button class="btn-ghost" id="editSummary" style="padding:7px 12px">${db.dailySummary[d]?'编辑':'填写'}</button></div>
+          </div>
+          ${db.dailySummary[d]?`<div class="summary-box"><div class="summary-text">${db.dailySummary[d]}</div></div>`:'<div class="empty">今天还没有总结</div>'}
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="emoji">💡</span>今日灵感</div>
+            <div class="card-actions"><button class="btn-ghost" data-goto="inspiration">查看全部</button></div>
+          </div>
+          ${db.inspiration.length?`<div class="entry"><div class="entry-text">${db.inspiration[db.inspiration.length-1].text}</div></div>`:'<div class="empty">还没有灵感记录</div>'}
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="emoji">🙏</span>今日感恩</div>
+            <div class="card-actions"><button class="btn-ghost" data-goto="gratitude">查看全部</button></div>
+          </div>
+          ${db.gratitude.length?`<div class="entry"><div class="entry-text">${db.gratitude[db.gratitude.length-1].text}</div></div>`:'<div class="empty">还没有感恩记录</div>'}
+        </div>
+      `;
+    }
+
+    // --- Plan ---
+    function viewPlan() {
+      const d = today();
+      const tasks = db.tasks[d] || [];
+      const done = tasks.filter(t=>t.done).length;
+      const summary = db.dailySummary[d] || '';
+
+      // yesterday comparison
+      const yd = new Date(); yd.setDate(yd.getDate()-1);
+      const ydStr = yd.toISOString().slice(0,10);
+      const yTasks = db.tasks[ydStr] || [];
+      const yDone = yTasks.filter(t=>t.done).length;
+      const yRate = yTasks.length? Math.round(yDone/yTasks.length*100):0;
+      const tRate = tasks.length? Math.round(done/tasks.length*100):0;
+      const rateDelta = tasks.length && yTasks.length ? tRate - yRate : null;
+      const yWater = getWaterTotal(ydStr);
+      const tWater = getWaterTotal(d);
+      const waterDelta = tWater - yWater;
+
+      return `
+        <div class="date-switch">
+          <button id="prevDay">‹</button>
+          <div class="cur" id="curDate">${fmtDate(d)}</div>
+          <button id="nextDay">›</button>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">📋</span>今日任务</div></div>
+          ${tasks.length?`<div class="task-list">${tasks.map(t=>`
+            <div class="task ${t.done?'done':''}" data-id="${t.id}">
+              <div class="check ${t.done?'done':''}" data-toggle="${t.id}"></div>
+              <div class="task-text">${t.text}</div>
+              <button class="task-del" data-del="${t.id}">×</button>
+            </div>`).join('')}</div>`:'<div class="empty">点击右上角 + 添加今日任务</div>'}
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="emoji">📝</span>每日总结</div>
+            <div class="card-actions"><button class="btn-add" id="editSummaryPlan">${summary?'编辑':'填写'}</button></div>
+          </div>
+          ${summary?`<div class="summary-box"><div class="summary-text">${summary}</div></div>`:'<div class="empty">今天还没有总结</div>'}
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">📊</span>对比分析 · 今日 vs 昨日</div></div>
+          <div class="compare-grid">
+            <div class="compare-card">
+              <div class="label">任务完成率</div>
+              <div class="val">${tRate}%</div>
+              <div class="delta ${rateDelta===null?'flat':rateDelta>0?'up':rateDelta<0?'down':'flat'}">
+                昨日 ${yRate}% ${rateDelta===null?'':rateDelta>0?`↑${rateDelta}%`:rateDelta<0?`↓${Math.abs(rateDelta)}%`:'持平'}
+              </div>
+            </div>
+            <div class="compare-card">
+              <div class="label">饮水量</div>
+              <div class="val">${tWater}ml</div>
+              <div class="delta ${waterDelta>0?'up':waterDelta<0?'down':'flat'}">
+                昨日 ${yWater}ml ${waterDelta>0?`↑${waterDelta}ml`:waterDelta<0?`↓${Math.abs(waterDelta)}ml`:'持平'}
+              </div>
+            </div>
+          </div>
+          ${db.dailySummary[ydStr]?`<div style="margin-top:12px"><div style="font-size:12px;color:var(--text-3);margin-bottom:6px">昨日总结</div><div class="summary-box" style="padding:10px"><div class="summary-text" style="font-size:13px;color:var(--text-2)">${db.dailySummary[ydStr]}</div></div></div>`:''}
+        </div>
+      `;
+    }
+
+    // --- Habit ---
+    function viewHabit() {
+      const d = today();
+      return `
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">✅</span>今日习惯打卡</div></div>
+          <div class="habit-grid">
+            ${db.habits.map(h=>{
+              const done = !!db.habitLog[h.id+'_'+d];
+              const pct = Math.round((done?1:0)*100);
+              return `<div class="habit ${done?'done':''}" data-habit="${h.id}">
+                <div class="habit-top">
+                  <span class="habit-emoji">${h.emoji}</span>
+                  <span class="habit-name">${h.name}</span>
+                  <span class="habit-streak">${done?'已完成':'未完成'}</span>
+                </div>
+                <div class="habit-bar"><i style="width:${pct}%"></i></div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // --- Inspiration ---
+    function viewInspiration() {
+      const list = [...db.inspiration].reverse();
+      return `
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">💡</span>每日灵感</div>
+            <div class="card-actions"><button class="btn-add" id="addInsp">+ 记录灵感</button></div>
+          </div>
+          ${list.length?list.map(e=>`
+            <div class="entry" data-id="${e.id}">
+              <div class="entry-head">
+                <span class="entry-date">${fmtDate(e.date)}</span>
+                <div>
+                  <button class="btn-ghost" data-edit="${e.id}" style="padding:4px 10px;font-size:12px">编辑</button>
+                  <button class="btn-ghost" data-del-entry="${e.id}" style="padding:4px 10px;font-size:12px;color:var(--danger)">删除</button>
+                </div>
+              </div>
+              <div class="entry-text">${e.text}</div>
+            </div>`).join(''):'<div class="empty">记录每一个闪现的灵感 ✨</div>'}
+        </div>
+      `;
+    }
+
+    // --- Gratitude ---
+    function viewGratitude() {
+      const list = [...db.gratitude].reverse();
+      return `
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">🙏</span>每日感恩</div>
+            <div class="card-actions"><button class="btn-add" id="addGrat">+ 记录感恩</button></div>
+          </div>
+          ${list.length?list.map(e=>`
+            <div class="entry" data-id="${e.id}">
+              <div class="entry-head">
+                <span class="entry-date">${fmtDate(e.date)}</span>
+                <div>
+                  <button class="btn-ghost" data-edit-grat="${e.id}" style="padding:4px 10px;font-size:12px">编辑</button>
+                  <button class="btn-ghost" data-del-grat="${e.id}" style="padding:4px 10px;font-size:12px;color:var(--danger)">删除</button>
+                </div>
+              </div>
+              <div class="entry-text">${e.text}</div>
+            </div>`).join(''):'<div class="empty">写下今天让你心怀感恩的事 🙏</div>'}
+        </div>
+      `;
+    }
+
+    // --- Weekly / Monthly report ---
+    function viewReport(type) {
+      const isWeekly = type === 'weekly';
+      const list = [...db[type]].reverse();
+      const sections = isWeekly
+        ? ['本周总结','本周成就','遇到的问题','下周计划']
+        : ['本月总结','本月成就','遇到的问题','下月计划'];
+      const keys = ['summary','achievements','issues','next'];
+
+      // comparison data: aggregate tasks & water for this period vs previous
+      let compareHtml = '';
+      if (list.length >= 1) {
+        const cur = list[0]; // most recent
+        const prev = list[1]; // previous period
+        const curCmp = cur.sections.compare || {};
+        if (prev) {
+          const prevCmp = prev.sections.compare || {};
+          const metrics = isWeekly
+            ? [['tasksDone','完成任务数'],['taskRate','完成率%'],['water','饮水ml'],['habitDays','习惯打卡天']]
+            : [['tasksDone','完成任务数'],['taskRate','完成率%'],['water','饮水ml'],['inspiration','灵感条数']];
+          compareHtml = `
+            <div class="compare-section">
+              <h4 style="font-size:14px;color:var(--accent);margin-bottom:10px;padding-left:8px;border-left:3px solid var(--primary)">📊 对比分析 · 本期 vs 上期</h4>
+              <div class="compare-grid">
+                ${metrics.map(([k,label])=>{
+                  const cv = curCmp[k]||0;
+                  const pv = prevCmp[k]||0;
+                  const delta = +cv - +pv;
+                  return `<div class="compare-card">
+                    <div class="label">${label}</div>
+                    <div class="val">${cv}</div>
+                    <div class="delta ${delta>0?'up':delta<0?'down':'flat'}">
+                      上期 ${pv} ${delta>0?`↑${delta}`:delta<0?`↓${Math.abs(delta)}`:'持平'}
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>`;
+        } else {
+          compareHtml = `<div class="compare-section"><div class="empty" style="padding:10px">只有一期数据，新增下一期后可自动生成对比分析</div></div>`;
+        }
+      }
+
+      return `
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="emoji">${isWeekly?'📅':'📆'}</span>${isWeekly?'周报':'月报'}</div>
+            <div class="card-actions"><button class="btn-add" id="addReport">+ 新建${isWeekly?'周报':'月报'}</button></div>
+          </div>
+          ${list.length?list.map((r,idx)=>`
+            <div class="entry" data-id="${r.id}">
+              <div class="entry-head">
+                <span class="entry-date">${r.period}</span>
+                <div>
+                  <button class="btn-ghost" data-edit-report="${r.id}" style="padding:4px 10px;font-size:12px">编辑</button>
+                  <button class="btn-ghost" data-del-report="${r.id}" style="padding:4px 10px;font-size:12px;color:var(--danger)">删除</button>
+                </div>
+              </div>
+              ${sections.map((s,i)=>`
+                <div class="report-section" style="margin-top:10px">
+                  <h4>${s}</h4>
+                  <div class="report-item">${r.sections[keys[i]] || '<span style="color:var(--text-3)">未填写</span>'}</div>
+                </div>`).join('')}
+              ${idx===0 ? (r.sections.compare ? compareHtml : `<div class="compare-section"><div class="empty" style="padding:10px">编辑本条可填写对比数据，新增下期后将自动对比</div></div>`) : ''}
+            </div>`).join(''):`<div class="empty">点击右上角新建${isWeekly?'周报':'月报'}</div>`}
+        </div>
+      `;
+    }
+
+    // --- Me page (我的 / 安装APP) ---
+    function viewMe() {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      return `
+        <div class="greeting" style="background:linear-gradient(135deg,#345434 0%,#55804a 100%)">
+          <h2>📱 安装到手机</h2>
+          <div class="g-date">将工作台安装为手机 APP，随时使用</div>
+        </div>
+
+        ${isStandalone ? `
+        <div class="card" style="text-align:center;padding:24px">
+          <div style="font-size:48px">✅</div>
+          <div style="font-size:16px;font-weight:600;margin-top:10px;color:var(--accent)">已安装为 APP</div>
+          <div style="font-size:13px;color:var(--text-2);margin-top:6px">你正在以独立应用模式运行</div>
+        </div>
+        ` : `
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">📱</span>一键安装（Android）</div></div>
+          <div style="font-size:14px;color:var(--text-2);line-height:1.7;margin-bottom:14px">
+            如果你的浏览器支持安装提示，点击下方按钮即可添加到桌面：
+          </div>
+          <button class="btn btn-primary" id="installAppBtn" style="width:100%;padding:14px;font-size:15px;background:var(--primary);color:#fff;border:none;border-radius:12px;cursor:pointer">
+            ⬇ 安装到桌面
+          </button>
+          <div id="installHint" style="font-size:12px;color:var(--text-3);margin-top:10px;text-align:center">
+            如果按钮不可用，请按下方手动安装方法操作
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">🤖</span>Android 安装方法</div></div>
+          <div style="font-size:14px;color:var(--text-2);line-height:1.8">
+            <div style="margin-bottom:8px"><b style="color:var(--accent)">方法一：浏览器安装</b></div>
+            <div style="padding-left:12px;margin-bottom:14px">
+              1. 用 Chrome 浏览器打开本页面<br>
+              2. 点击地址栏右侧的 <b>⋮</b> 菜单<br>
+              3. 选择 <b>"安装应用"</b> 或 <b>"添加到主屏幕"</b><br>
+              4. 确认安装，桌面会出现 APP 图标
+            </div>
+            <div style="margin-bottom:8px"><b style="color:var(--accent)">方法二：PWA Builder</b></div>
+            <div style="padding-left:12px">
+              1. 访问 <b>pwabuilder.com</b><br>
+              2. 输入你的网址，生成 Android APK<br>
+              3. 下载 APK 并安装到手机
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">🍎</span>iPhone (iOS) 安装方法</div></div>
+          <div style="font-size:14px;color:var(--text-2);line-height:1.8">
+            <div style="padding-left:12px">
+              1. 用 <b>Safari</b> 浏览器打开本页面<br>
+              2. 点击底部 <b>分享</b> 按钮（↑方框图标）<br>
+              3. 滑动选择 <b>"添加到主屏幕"</b><br>
+              4. 点击 <b>"添加"</b>，桌面出现 APP 图标<br>
+              5. 点击图标即可全屏运行，无需浏览器
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">💡</span>APP 特性</div></div>
+          <div style="font-size:13px;color:var(--text-2);line-height:1.8">
+            ✅ 全屏运行，像原生 APP<br>
+            ✅ 离线可用（Service Worker 缓存）<br>
+            ✅ 数据本地存储，无需联网<br>
+            ✅ 可安装在手机桌面，随时打开
+          </div>
+        </div>
+        `}
+
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">📊</span>数据管理</div></div>
+          <div style="display:flex;gap:10px;flex-direction:column">
+            <button class="btn btn-ghost" id="exportData" style="padding:12px;font-size:14px">📤 导出数据备份</button>
+            <button class="btn btn-ghost" id="importDataBtn" style="padding:12px;font-size:14px">📥 导入数据</button>
+            <button class="btn btn-ghost" id="clearData" style="padding:12px;font-size:14px;color:var(--danger)">🗑 清空所有数据</button>
+          </div>
+          <div id="importWrap" style="display:none;margin-top:10px">
+            <textarea class="textarea" id="importText" placeholder="粘贴之前导出的备份数据..." style="min-height:100px"></textarea>
+            <button class="btn btn-primary" id="doImport" style="width:100%;margin-top:8px;padding:10px">确认导入</button>
+          </div>
+        </div>
+
+        <div class="card" style="text-align:center">
+          <div style="font-size:13px;color:var(--text-3)">个人工作台 · v2.0</div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:4px">PWA · localStorage · 离线可用</div>
+        </div>
+      `;
+    }
+
+    function viewPlaceholder(title, emoji, desc) {
+      return `<div class="card"><div class="card-title" style="margin-bottom:12px"><span class="emoji">${emoji}</span>${title}</div><div class="empty">${desc}</div></div>`;
+    }
+
+    // --- Videos (爆款视频分析) ---
+    const VIDEO_CATS = [
+      { id:'mom', label:'职场妈妈提升', emoji:'👩‍💼', cls:'mom' },
+      { id:'parenting', label:'育儿视频', emoji:'👶', cls:'parenting' },
+      { id:'ai', label:'AI视频教学', emoji:'🤖', cls:'ai' },
+      { id:'own', label:'自己的选题', emoji:'🎬', cls:'own' },
+    ];
+    function catLabel(id) { return VIDEO_CATS.find(c=>c.id===id)?.label || id; }
+    function catCls(id) { return VIDEO_CATS.find(c=>c.id===id)?.cls || ''; }
+    function catEmoji(id) { return VIDEO_CATS.find(c=>c.id===id)?.emoji || '🔥'; }
+
+    function viewVideos() {
+      const list = [...db.videos].reverse();
+      const groups = VIDEO_CATS.map(c => ({
+        ...c,
+        items: list.filter(v => v.type === c.id)
+      }));
+
+      return `
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="emoji">🔥</span>爆款视频 / 小红书分析</div>
+            <div class="card-actions"><button class="btn-add" id="addVideo">+ 分析一条</button></div>
+          </div>
+          <div class="ml-quick" style="margin-bottom:14px">
+            ${VIDEO_CATS.map(c=>`<span class="type-chip" style="cursor:default">${c.emoji} ${c.label} (${groups.find(g=>g.id===c.id).items.length})</span>`).join('')}
+          </div>
+          ${list.length?list.map(v=>`
+            <div class="video-card" data-id="${v.id}">
+              <div class="vc-head">
+                <span class="vc-cat ${catCls(v.type)}">${catEmoji(v.type)} ${catLabel(v.type)}</span>
+                ${v.platform?`<span class="vc-platform">${v.platform}</span>`:''}
+                <span class="entry-date">${fmtDate(v.date)}</span>
+                <div style="margin-left:auto">
+                  <button class="btn-ghost" data-edit-video="${v.id}" style="padding:4px 10px;font-size:12px">编辑</button>
+                  <button class="btn-ghost" data-del-video="${v.id}" style="padding:4px 10px;font-size:12px;color:var(--danger)">删除</button>
+                </div>
+              </div>
+              <div class="vc-title">${v.title || '未填写标题'}</div>
+              ${v.analysis?`<div class="vc-section"><div class="vc-label">爆点分析</div><div class="vc-text">${v.analysis}</div></div>`:''}
+              ${v.topic?`<div class="vc-section"><div class="vc-label">可借鉴选题</div><div class="vc-text">${v.topic}</div></div>`:''}
+              ${v.notes?`<div class="vc-section"><div class="vc-label">拍摄思路 / 备注</div><div class="vc-text">${v.notes}</div></div>`:''}
+            </div>`).join(''):'<div class="empty">还没有分析记录，点击右上角 + 添加</div>'}
+        </div>
+      `;
+    }
+
+    // --- Words (English / Spanish) ---
+    function viewWords(lang, title) {
+      const d = today();
+      const words = db[lang][d] || [];
+      const done = words.filter(w=>w.done).length;
+      const goal = 5;
+      const prevDays = Object.keys(db[lang]).sort().reverse().slice(0,7);
+      let historyHtml = '';
+      if (prevDays.length > 1 || (prevDays.length===1 && prevDays[0]!==d)) {
+        historyHtml = `<div class="card"><div class="card-head"><div class="card-title"><span class="emoji">📜</span>最近7天记录</div></div>`;
+        prevDays.forEach(pd => {
+          if (pd === d) return;
+          const pw = db[lang][pd] || [];
+          if (pw.length) {
+            historyHtml += `<div class="entry"><div class="entry-head"><span class="entry-date">${fmtDate(pd)}</span><span class="chip">${pw.filter(w=>w.done).length}/${pw.length}</span></div><div class="entry-text" style="font-size:13px">${pw.map(w=>`${w.done?'<span style="color:var(--accent)">✓</span> ':'<span style="color:var(--text-3)">○</span> '}${w.word} (${w.meaning})`).join(' · ')}</div></div>`;
+          }
+        });
+        historyHtml += '</div>';
+      }
+      return `
+        <div class="date-switch">
+          <button id="prevDay">‹</button>
+          <div class="cur" id="curDate">${fmtDate(d)}</div>
+          <button id="nextDay">›</button>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="emoji">${lang==='english'?'🔤':'🇪🇸'}</span>${title} · 今日 ${done}/${Math.max(goal,words.length)}</div>
+          </div>
+          ${words.length?`<div class="task-list">${words.map(w=>`
+            <div class="task ${w.done?'done':''}" data-wid="${w.id}">
+              <div class="check ${w.done?'done':''}" data-wtoggle="${w.id}"></div>
+              <div class="task-text"><b>${w.word}</b> <span style="color:var(--text-2);font-size:13px">${w.meaning}</span></div>
+              <button class="task-del" data-wdel="${w.id}">×</button>
+            </div>`).join('')}</div>`:'<div class="empty">点击右上角 + 添加今日单词（目标 5 个）</div>'}
+        </div>
+        ${historyHtml}
+      `;
+    }
+
+    // --- Fitness (拉伸10分钟) ---
+    function viewFitness() {
+      const d = today();
+      const key = 'fitness_'+d;
+      const done = !!db.habitLog[key];
+      const recent = Object.keys(db.habitLog).filter(k=>k.startsWith('fitness_')).sort().reverse().slice(0,14);
+      const streak = (() => {
+        let s = 0; const dt = new Date();
+        while (true) {
+          const ds = dt.toISOString().slice(0,10);
+          if (db.habitLog['fitness_'+ds]) { s++; dt.setDate(dt.getDate()-1); }
+          else break;
+        }
+        return s;
+      })();
+      return `
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">🧘</span>健身拉伸 10 分钟</div></div>
+          <div class="habit-grid">
+            <div class="habit ${done?'done':''}" data-fitness>
+              <div class="habit-top">
+                <span class="habit-emoji">🧘</span>
+                <span class="habit-name">今日拉伸</span>
+                <span class="habit-streak">${done?'已完成':'未完成'}</span>
+              </div>
+              <div class="habit-bar"><i style="width:${done?100:0}%"></i></div>
+            </div>
+            <div class="habit" style="cursor:default">
+              <div class="habit-top">
+                <span class="habit-emoji">🔥</span>
+                <span class="habit-name">连续打卡</span>
+                <span class="habit-streak">${streak} 天</span>
+              </div>
+              <div class="habit-bar"><i style="width:${Math.min(100,streak*10)}%"></i></div>
+            </div>
+          </div>
+        </div>
+        ${recent.length?`<div class="card"><div class="card-head"><div class="card-title"><span class="emoji">📅</span>最近记录</div></div>${recent.map(k=>{
+          const ds = k.replace('fitness_','');
+          return `<div class="entry"><div class="entry-head"><span class="entry-date">${fmtDate(ds)}</span><span class="chip" style="color:var(--accent)">✓ 完成</span></div></div>`;
+        }).join('')}</div>`:'<div class="empty">还没有打卡记录</div>'}
+      `;
+    }
+
+    // --- Weight (体重管理) ---
+    function viewWeight() {
+      const list = [...db.weight].reverse();
+      const latest = list[0];
+      const prev = list[1];
+      let deltaHtml = '';
+      if (latest && prev) {
+        const delta = +(latest.weight) - +(prev.weight);
+        deltaHtml = `<div class="compare-section"><div class="compare-grid">
+          <div class="compare-card"><div class="label">最新体重</div><div class="val">${latest.weight} kg</div>
+            <div class="delta ${delta<0?'up':delta>0?'down':'flat'}">${delta<0?`↓${Math.abs(delta).toFixed(1)}kg`:delta>0?`↑${delta.toFixed(1)}kg`:'持平'} vs 上次</div></div>
+          <div class="compare-card"><div class="label">上次记录</div><div class="val">${prev.weight} kg</div>
+            <div class="delta flat">${fmtDate(prev.date)}</div></div>
+        </div></div>`;
+      }
+      return `
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">⚖️</span>体重管理</div>
+            <div class="card-actions"><button class="btn-add" id="addWeight">+ 记录</button></div>
+          </div>
+          ${latest?`<div class="summary-box" style="text-align:center"><div style="font-size:28px;font-weight:700;color:var(--accent)">${latest.weight} kg</div><div style="font-size:12px;color:var(--text-3);margin-top:4px">${fmtDate(latest.date)}</div></div>`:'<div class="empty">还没有体重记录</div>'}
+          ${deltaHtml}
+        </div>
+        ${list.length?`<div class="card"><div class="card-head"><div class="card-title"><span class="emoji">📋</span>历史记录</div></div>${list.map(w=>`
+          <div class="entry"><div class="entry-head"><span class="entry-date">${fmtDate(w.date)}</span>
+            <div><button class="btn-ghost" data-edit-weight="${w.id}" style="padding:4px 10px;font-size:12px">编辑</button>
+            <button class="btn-ghost" data-del-weight="${w.id}" style="padding:4px 10px;font-size:12px;color:var(--danger)">删除</button></div>
+          </div><div class="entry-text"><b style="font-size:18px;color:var(--accent)">${w.weight} kg</b>${w.note?`<br><span style="color:var(--text-2);font-size:13px">${w.note}</span>`:''}</div></div>`).join('')}</div>`:''}
+      `;
+    }
+
+    // --- Period (月经记录) ---
+    function viewPeriod() {
+      const list = [...db.period].reverse();
+      const latest = list[0];
+      // calculate cycle
+      let cycleHtml = '';
+      if (list.length >= 2) {
+        const d1 = new Date(list[list.length-1].date);
+        const d2 = new Date(list[list.length-2].date);
+        const days = Math.round((d1-d2)/(86400000));
+        cycleHtml = `<div class="compare-card"><div class="label">周期间隔</div><div class="val">${days} 天</div><div class="delta flat">平均 28 天</div></div>`;
+      }
+      return `
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">🌸</span>月经记录</div>
+            <div class="card-actions"><button class="btn-add" id="addPeriod">+ 记录</button></div>
+          </div>
+          ${latest?`<div class="summary-box"><div style="font-size:16px"><b>${fmtDate(latest.date)}</b> · ${latest.type==='start'?'🩸 来潮':'🟢 结束'}</div>${latest.flow?`<div style="margin-top:6px;font-size:13px;color:var(--text-2)">量：${latest.flow}</div>`:''}${latest.symptoms?`<div style="margin-top:4px;font-size:13px;color:var(--text-2)">症状：${latest.symptoms}</div>`:''}${latest.note?`<div style="margin-top:4px;font-size:13px;color:var(--text-2)">备注：${latest.note}</div>`:''}</div>`:'<div class="empty">还没有月经记录</div>'}
+          ${cycleHtml?`<div class="compare-section"><div class="compare-grid">${cycleHtml}</div></div>`:''}
+        </div>
+        ${list.length?`<div class="card"><div class="card-head"><div class="card-title"><span class="emoji">📋</span>历史记录</div></div>${list.map(p=>`
+          <div class="entry"><div class="entry-head"><span class="entry-date">${fmtDate(p.date)}</span>
+            <div><button class="btn-ghost" data-edit-period="${p.id}" style="padding:4px 10px;font-size:12px">编辑</button>
+            <button class="btn-ghost" data-del-period="${p.id}" style="padding:4px 10px;font-size:12px;color:var(--danger)">删除</button></div>
+          </div><div class="entry-text">${p.type==='start'?'🩸 来潮':'🟢 结束'}${p.flow?` · 量 ${p.flow}`:''}${p.symptoms?` · ${p.symptoms}`:''}${p.note?`<br><span style="color:var(--text-2);font-size:13px">${p.note}</span>`:''}</div></div>`).join('')}</div>`:''}
+      `;
+    }
+
+    // --- Dousha Fun (每日趣事) ---
+    function viewDoushaFun() {
+      const list = [...db.doushaFun].reverse();
+      return `
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">🌟</span>豆沙每日趣事</div>
+            <div class="card-actions"><button class="btn-add" id="addDoushaFun">+ 记录</button></div>
+          </div>
+          ${list.length?list.map(e=>`
+            <div class="entry" data-id="${e.id}">
+              <div class="entry-head"><span class="entry-date">${fmtDate(e.date)}</span>
+                <div><button class="btn-ghost" data-edit-df="${e.id}" style="padding:4px 10px;font-size:12px">编辑</button>
+                <button class="btn-ghost" data-del-df="${e.id}" style="padding:4px 10px;font-size:12px;color:var(--danger)">删除</button></div>
+              </div><div class="entry-text">${e.text}</div></div>`).join(''):'<div class="empty">记录豆沙每天的趣事 🌟</div>'}
+        </div>
+      `;
+    }
+
+    // --- Dousha Daily (每日记录) ---
+    function viewDoushaDaily() {
+      const d = today();
+      const text = db.doushaDaily[d] || '';
+      const dates = Object.keys(db.doushaDaily).sort().reverse();
+      let historyHtml = '';
+      if (dates.length > 1 || (dates.length===1 && dates[0]!==d)) {
+        historyHtml = '<div class="card"><div class="card-head"><div class="card-title"><span class="emoji">📜</span>历史记录</div></div>';
+        dates.forEach(pd => {
+          if (pd === d) return;
+          const pt = db.doushaDaily[pd];
+          if (pt) {
+            historyHtml += `<div class="entry"><div class="entry-head"><span class="entry-date">${fmtDate(pd)}</span><button class="btn-ghost" data-edit-dd="${pd}" style="padding:4px 10px;font-size:12px">编辑</button></div><div class="entry-text">${pt}</div></div>`;
+          }
+        });
+        historyHtml += '</div>';
+      }
+      return `
+        <div class="date-switch">
+          <button id="prevDay">‹</button>
+          <div class="cur" id="curDate">${fmtDate(d)}</div>
+          <button id="nextDay">›</button>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="emoji">📔</span>每日记录</div>
+            <div class="card-actions"><button class="btn-add" id="editDoushaDaily">${text?'编辑':'填写'}</button></div>
+          </div>
+          ${text?`<div class="summary-box"><div class="summary-text">${text}</div></div>`:'<div class="empty">今天还没有记录，点击"填写"记录豆沙的一天</div>'}
+        </div>
+        ${historyHtml}
+      `;
+    }
+
+    // --- Dousha Checkin (每日打卡) ---
+    function viewDoushaCheckin() {
+      const d = today();
+      const items = db.doushaCheckin[d] || [];
+      const done = items.filter(t=>t.done).length;
+      return `
+        <div class="date-switch">
+          <button id="prevDay">‹</button>
+          <div class="cur" id="curDate">${fmtDate(d)}</div>
+          <button id="nextDay">›</button>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">✅</span>豆沙每日打卡 · ${done}/${items.length}</div></div>
+          ${items.length?`<div class="task-list">${items.map(t=>`
+            <div class="task ${t.done?'done':''}" data-dcid="${t.id}">
+              <div class="check ${t.done?'done':''}" data-dctoggle="${t.id}"></div>
+              <div class="task-text">${t.text}</div>
+              <button class="task-del" data-dcdel="${t.id}">×</button>
+            </div>`).join('')}</div>`:'<div class="empty">点击右上角 + 添加打卡项</div>'}
+        </div>
+      `;
+    }
+
+    // --- Dousha Growth (体重身高记录) ---
+    function viewDoushaGrowth() {
+      const list = [...db.doushaGrowth].reverse();
+      const latest = list[0];
+      const prev = list[1];
+      let deltaHtml = '';
+      if (latest && prev) {
+        const dw = +(latest.weight) - +(prev.weight);
+        const dh = +(latest.height) - +(prev.height);
+        deltaHtml = `<div class="compare-section"><div class="compare-grid">
+          <div class="compare-card"><div class="label">体重变化</div><div class="val">${latest.weight} kg</div>
+            <div class="delta ${dw>0?'up':dw<0?'down':'flat'}">${dw>0?`↑${dw.toFixed(1)}kg`:dw<0?`↓${Math.abs(dw).toFixed(1)}kg`:'持平'} vs 上次</div></div>
+          <div class="compare-card"><div class="label">身高变化</div><div class="val">${latest.height} cm</div>
+            <div class="delta ${dh>0?'up':'flat'}">${dh>0?`↑${dh.toFixed(1)}cm`:'持平'} vs 上次</div></div>
+        </div></div>`;
+      }
+      return `
+        <div class="card">
+          <div class="card-head"><div class="card-title"><span class="emoji">📏</span>豆沙体重身高记录</div>
+            <div class="card-actions"><button class="btn-add" id="addDoushaGrowth">+ 记录</button></div>
+          </div>
+          ${latest?`<div class="summary-box" style="text-align:center">
+            <div style="font-size:24px;font-weight:700;color:var(--accent)">${latest.weight}kg / ${latest.height}cm</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:4px">${fmtDate(latest.date)}</div>
+          </div>`:'<div class="empty">还没有记录</div>'}
+          ${deltaHtml}
+        </div>
+        ${list.length?`<div class="card"><div class="card-head"><div class="card-title"><span class="emoji">📋</span>历史记录</div></div>${list.map(g=>`
+          <div class="entry"><div class="entry-head"><span class="entry-date">${fmtDate(g.date)}</span>
+            <div><button class="btn-ghost" data-edit-dg="${g.id}" style="padding:4px 10px;font-size:12px">编辑</button>
+            <button class="btn-ghost" data-del-dg="${g.id}" style="padding:4px 10px;font-size:12px;color:var(--danger)">删除</button></div>
+          </div><div class="entry-text"><b style="font-size:18px;color:var(--accent)">${g.weight}kg / ${g.height}cm</b>${g.note?`<br><span style="color:var(--text-2);font-size:13px">${g.note}</span>`:''}</div></div>`).join('')}</div>`:''}
+      `;
+    }
+
+    // ===== Event binding =====
+    function bindViewEvents() {
+      // water - new system with custom ml + coffee
+      let wType = 'water';
+      document.querySelectorAll('[data-wtype]').forEach(c => {
+        c.onclick = () => {
+          wType = c.dataset.wtype;
+          document.querySelectorAll('[data-wtype]').forEach(x => x.classList.remove('active'));
+          c.classList.add('active');
+        };
+      });
+      const addWaterBtn = document.getElementById('addWater');
+      if (addWaterBtn) addWaterBtn.onclick = () => {
+        const ml = parseInt(document.getElementById('waterMl').value) || 0;
+        if (ml <= 0 || ml > 2000) { toast('请输入 1-2000 ml'); return; }
+        const d = today();
+        if (!db.waterLog[d]) db.waterLog[d] = [];
+        db.waterLog[d].push({ id: uid(), type: wType, ml, time: Date.now() });
+        save(); renderView(); toast(`+${ml}ml ${wType==='coffee'?'☕':'💧'}`);
+      };
+      document.querySelectorAll('[data-quickml]').forEach(b => {
+        b.onclick = () => {
+          const ml = +b.dataset.quickml;
+          const d = today();
+          if (!db.waterLog[d]) db.waterLog[d] = [];
+          db.waterLog[d].push({ id: uid(), type: wType, ml, time: Date.now() });
+          save(); renderView(); toast(`+${ml}ml ${wType==='coffee'?'☕':'💧'}`);
+        };
+      });
+      const rw = document.getElementById('resetWater');
+      if (rw) rw.onclick = () => {
+        const d = today();
+        db.waterLog[d] = [];
+        save(); renderView(); toast('已清空');
+      };
+
+      // daily summary
+      const editSummary = document.getElementById('editSummary');
+      if (editSummary) editSummary.onclick = () => openSummaryModal();
+      const editSummaryPlan = document.getElementById('editSummaryPlan');
+      if (editSummaryPlan) editSummaryPlan.onclick = () => openSummaryModal();
+
+      // tasks
+      document.querySelectorAll('[data-toggle]').forEach(el => el.onclick = () => {
+        const id = el.dataset.toggle;
+        const d = today();
+        const t = db.tasks[d].find(x=>x.id===id);
+        if (t) { t.done = !t.done; save(); renderView(); }
+      });
+      document.querySelectorAll('[data-del]').forEach(el => el.onclick = (e) => {
+        e.stopPropagation();
+        const id = el.dataset.del;
+        const d = today();
+        db.tasks[d] = db.tasks[d].filter(x=>x.id!==id);
+        save(); renderView(); toast('已删除');
+      });
+      document.querySelectorAll('[data-goto]').forEach(el => el.onclick = () => switchView(el.dataset.goto));
+
+      // habits
+      document.querySelectorAll('[data-habit]').forEach(el => el.onclick = () => {
+        const id = el.dataset.habit;
+        const key = id+'_'+today();
+        if (db.habitLog[key]) delete db.habitLog[key];
+        else db.habitLog[key] = 1;
+        save(); renderView(); toast(db.habitLog[key]?'打卡成功':'已取消');
+      });
+
+      // videos
+      const addVideo = document.getElementById('addVideo');
+      if (addVideo) addVideo.onclick = () => openVideoModal();
+      document.querySelectorAll('[data-edit-video]').forEach(el => el.onclick = () => {
+        const v = db.videos.find(x=>x.id===el.dataset.editVideo);
+        if (v) openVideoModal(v);
+      });
+      document.querySelectorAll('[data-del-video]').forEach(el => el.onclick = () => {
+        db.videos = db.videos.filter(x=>x.id!==el.dataset.delVideo);
+        save(); renderView(); toast('已删除');
+      });
+
+      // words (english/spanish)
+      document.querySelectorAll('[data-wtoggle]').forEach(el => el.onclick = () => {
+        const lang = currentView;
+        const d = today();
+        const w = db[lang][d].find(x=>x.id===el.dataset.wtoggle);
+        if (w) { w.done = !w.done; save(); renderView(); }
+      });
+      document.querySelectorAll('[data-wdel]').forEach(el => el.onclick = () => {
+        const lang = currentView;
+        const d = today();
+        db[lang][d] = db[lang][d].filter(x=>x.id!==el.dataset.wdel);
+        save(); renderView(); toast('已删除');
+      });
+
+      // fitness
+      const fitnessEl = document.querySelector('[data-fitness]');
+      if (fitnessEl) fitnessEl.onclick = () => {
+        const key = 'fitness_'+today();
+        if (db.habitLog[key]) delete db.habitLog[key];
+        else db.habitLog[key] = 1;
+        save(); renderView(); toast(db.habitLog[key]?'打卡成功':'已取消');
+      };
+
+      // weight
+      const addWeight = document.getElementById('addWeight');
+      if (addWeight) addWeight.onclick = () => openWeightModal();
+      document.querySelectorAll('[data-edit-weight]').forEach(el => el.onclick = () => {
+        const w = db.weight.find(x=>x.id===el.dataset.editWeight);
+        if (w) openWeightModal(w);
+      });
+      document.querySelectorAll('[data-del-weight]').forEach(el => el.onclick = () => {
+        db.weight = db.weight.filter(x=>x.id!==el.dataset.delWeight);
+        save(); renderView(); toast('已删除');
+      });
+
+      // period
+      const addPeriod = document.getElementById('addPeriod');
+      if (addPeriod) addPeriod.onclick = () => openPeriodModal();
+      document.querySelectorAll('[data-edit-period]').forEach(el => el.onclick = () => {
+        const p = db.period.find(x=>x.id===el.dataset.editPeriod);
+        if (p) openPeriodModal(p);
+      });
+      document.querySelectorAll('[data-del-period]').forEach(el => el.onclick = () => {
+        db.period = db.period.filter(x=>x.id!==el.dataset.delPeriod);
+        save(); renderView(); toast('已删除');
+      });
+
+      // dousha fun
+      const addDoushaFun = document.getElementById('addDoushaFun');
+      if (addDoushaFun) addDoushaFun.onclick = () => openEntryModal('doushaFun','记录豆沙趣事');
+      document.querySelectorAll('[data-edit-df]').forEach(el => el.onclick = () => {
+        const e = db.doushaFun.find(x=>x.id===el.dataset.editDf);
+        if (e) openEntryModal('doushaFun','编辑趣事', e);
+      });
+      document.querySelectorAll('[data-del-df]').forEach(el => el.onclick = () => {
+        db.doushaFun = db.doushaFun.filter(x=>x.id!==el.dataset.delDf);
+        save(); renderView(); toast('已删除');
+      });
+
+      // dousha daily
+      const editDD = document.getElementById('editDoushaDaily');
+      if (editDD) editDD.onclick = () => openDoushaDailyModal();
+      document.querySelectorAll('[data-edit-dd]').forEach(el => el.onclick = () => {
+        openDoushaDailyModal(el.dataset.editDd);
+      });
+
+      // dousha checkin
+      document.querySelectorAll('[data-dctoggle]').forEach(el => el.onclick = () => {
+        const d = today();
+        const t = db.doushaCheckin[d].find(x=>x.id===el.dataset.dctoggle);
+        if (t) { t.done = !t.done; save(); renderView(); }
+      });
+      document.querySelectorAll('[data-dcdel]').forEach(el => el.onclick = () => {
+        const d = today();
+        db.doushaCheckin[d] = db.doushaCheckin[d].filter(x=>x.id!==el.dataset.dcdel);
+        save(); renderView(); toast('已删除');
+      });
+
+      // dousha growth
+      const addDoushaGrowth = document.getElementById('addDoushaGrowth');
+      if (addDoushaGrowth) addDoushaGrowth.onclick = () => openDoushaGrowthModal();
+      document.querySelectorAll('[data-edit-dg]').forEach(el => el.onclick = () => {
+        const g = db.doushaGrowth.find(x=>x.id===el.dataset.editDg);
+        if (g) openDoushaGrowthModal(g);
+      });
+      document.querySelectorAll('[data-del-dg]').forEach(el => el.onclick = () => {
+        db.doushaGrowth = db.doushaGrowth.filter(x=>x.id!==el.dataset.delDg);
+        save(); renderView(); toast('已删除');
+      });
+
+      // me page - data management
+      const exportData = document.getElementById('exportData');
+      if (exportData) exportData.onclick = () => {
+        const data = JSON.stringify(db, null, 2);
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(data).then(() => toast('数据已复制到剪贴板'));
+        } else {
+          const blob = new Blob([data], {type:'application/json'});
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `工作台备份_${today()}.json`;
+          a.click();
+          toast('备份文件已下载');
+        }
+      };
+      const importDataBtn = document.getElementById('importDataBtn');
+      if (importDataBtn) importDataBtn.onclick = () => {
+        const wrap = document.getElementById('importWrap');
+        wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+      };
+      const doImport = document.getElementById('doImport');
+      if (doImport) doImport.onclick = () => {
+        const text = document.getElementById('importText').value.trim();
+        if (!text) { toast('请粘贴数据'); return; }
+        try {
+          db = { ...defaultData, ...JSON.parse(text) };
+          save(); renderView(); toast('数据导入成功');
+        } catch(e) { toast('数据格式错误'); }
+      };
+      const clearData = document.getElementById('clearData');
+      if (clearData) clearData.onclick = () => {
+        if (confirm('确定清空所有数据吗？此操作不可撤销')) {
+          localStorage.removeItem(STORE);
+          db = JSON.parse(JSON.stringify(defaultData));
+          save(); renderView(); toast('已清空');
+        }
+      };
+      const installAppBtn = document.getElementById('installAppBtn');
+      if (installAppBtn) installAppBtn.onclick = () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(() => { deferredPrompt = null; renderView(); });
+        } else {
+          toast('请使用浏览器菜单"添加到主屏幕"');
+        }
+      };
+
+      // inspiration
+      const ai = document.getElementById('addInsp');
+      if (ai) ai.onclick = () => openEntryModal('inspiration','记录灵感');
+      document.querySelectorAll('[data-edit]').forEach(el => el.onclick = () => {
+        const e = db.inspiration.find(x=>x.id===el.dataset.edit);
+        if (e) openEntryModal('inspiration','编辑灵感', e);
+      });
+      document.querySelectorAll('[data-del-entry]').forEach(el => el.onclick = () => {
+        db.inspiration = db.inspiration.filter(x=>x.id!==el.dataset.delEntry);
+        save(); renderView(); toast('已删除');
+      });
+
+      // gratitude
+      const ag = document.getElementById('addGrat');
+      if (ag) ag.onclick = () => openEntryModal('gratitude','记录感恩');
+      document.querySelectorAll('[data-edit-grat]').forEach(el => el.onclick = () => {
+        const e = db.gratitude.find(x=>x.id===el.dataset.editGrat);
+        if (e) openEntryModal('gratitude','编辑感恩', e);
+      });
+      document.querySelectorAll('[data-del-grat]').forEach(el => el.onclick = () => {
+        db.gratitude = db.gratitude.filter(x=>x.id!==el.dataset.delGrat);
+        save(); renderView(); toast('已删除');
+      });
+
+      // report
+      const ar = document.getElementById('addReport');
+      if (ar) ar.onclick = () => openReportModal();
+      document.querySelectorAll('[data-edit-report]').forEach(el => el.onclick = () => {
+        const r = db[currentView].find(x=>x.id===el.dataset.editReport);
+        if (r) openReportModal(r);
+      });
+      document.querySelectorAll('[data-del-report]').forEach(el => el.onclick = () => {
+        db[currentView] = db[currentView].filter(x=>x.id!==el.dataset.delReport);
+        save(); renderView(); toast('已删除');
+      });
+    }
+
+    // ===== Modals =====
+    const modal = document.getElementById('modal');
+    const modalBox = document.getElementById('modalBox');
+    modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+
+    function openModal(html) { modalBox.innerHTML = html; modal.classList.add('open'); }
+    function closeModal() { modal.classList.remove('open'); }
+
+    function openEntryModal(type, title, entry) {
+      const editing = !!entry;
+      openModal(`
+        <h3>${title}</h3>
+        <div class="field">
+          <textarea class="textarea" id="entryText" placeholder="写下你的想法...">${editing?entry.text:''}</textarea>
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelEntry">取消</button>
+          <button class="btn btn-primary" id="saveEntry">保存</button>
+        </div>
+      `);
+      document.getElementById('entryText').focus();
+      document.getElementById('cancelEntry').onclick = closeModal;
+      document.getElementById('saveEntry').onclick = () => {
+        const text = document.getElementById('entryText').value.trim();
+        if (!text) { toast('内容不能为空'); return; }
+        if (editing) {
+          entry.text = text;
+          entry.date = today();
+        } else {
+          db[type].push({ id: uid(), date: today(), text });
+        }
+        save(); closeModal(); renderView(); toast('已保存');
+      };
+    }
+
+    function openReportModal(report) {
+      const isWeekly = currentView === 'weekly';
+      const editing = !!report;
+      const sections = isWeekly
+        ? ['本周总结','本周成就','遇到的问题','下周计划']
+        : ['本月总结','本月成就','遇到的问题','下月计划'];
+      const keys = ['summary','achievements','issues','next'];
+      const sec = editing ? report.sections : {};
+      const cmp = editing ? (sec.compare || {}) : {};
+
+      const now = new Date();
+      let period;
+      if (isWeekly) {
+        const start = new Date(now);
+        start.setDate(now.getDate() - now.getDay() + 1);
+        const end = new Date(start); end.setDate(start.getDate()+6);
+        period = `${start.getMonth()+1}/${start.getDate()} - ${end.getMonth()+1}/${end.getDate()}`;
+      } else {
+        period = `${now.getFullYear()}年${now.getMonth()+1}月`;
+      }
+
+      const cmpFields = isWeekly
+        ? [['tasksDone','完成任务数'],['taskRate','完成率%'],['water','饮水ml'],['habitDays','习惯打卡天']]
+        : [['tasksDone','完成任务数'],['taskRate','完成率%'],['water','饮水ml'],['inspiration','灵感条数']];
+
+      openModal(`
+        <h3>${editing?'编辑':'新建'}${isWeekly?'周报':'月报'}</h3>
+        <div class="field">
+          <label>周期</label>
+          <input class="input" id="reportPeriod" value="${editing?report.period:period}" />
+        </div>
+        ${sections.map((s,i)=>`
+          <div class="field">
+            <label>${s}</label>
+            <textarea class="textarea" id="r_${keys[i]}" placeholder="请输入...">${sec[keys[i]]||''}</textarea>
+          </div>`).join('')}
+        <div style="background:var(--surface);border-radius:12px;padding:14px;margin:10px 0">
+          <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px">📊 对比数据（填写后自动生成对比分析）</div>
+          <div class="compare-grid">
+            ${cmpFields.map(([k,label])=>`
+              <div>
+                <label style="font-size:12px;color:var(--text-2)">${label}</label>
+                <input class="input" id="cmp_${k}" type="number" value="${cmp[k]||''}" placeholder="0" style="margin-top:4px" />
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelReport">取消</button>
+          <button class="btn btn-primary" id="saveReport">保存</button>
+        </div>
+      `);
+      document.getElementById('cancelReport').onclick = closeModal;
+      document.getElementById('saveReport').onclick = () => {
+        const period = document.getElementById('reportPeriod').value.trim();
+        const sectionsObj = {};
+        keys.forEach(k => sectionsObj[k] = document.getElementById('r_'+k).value.trim());
+        const compareObj = {};
+        cmpFields.forEach(([k]) => compareObj[k] = document.getElementById('cmp_'+k).value || '0');
+        sectionsObj.compare = compareObj;
+        if (editing) {
+          report.period = period;
+          report.sections = sectionsObj;
+        } else {
+          db[currentView].push({ id: uid(), period, date: today(), sections: sectionsObj });
+        }
+        save(); closeModal(); renderView(); toast('已保存');
+      };
+    }
+
+    // ===== Daily summary modal =====
+    function openSummaryModal() {
+      const d = today();
+      const existing = db.dailySummary[d] || '';
+      openModal(`
+        <h3>每日总结</h3>
+        <div class="field">
+          <label>${fmtDate(d)}</label>
+          <textarea class="textarea" id="summaryText" placeholder="今天完成了什么？有什么收获和反思？">${existing}</textarea>
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelSummary">取消</button>
+          <button class="btn btn-primary" id="saveSummary">保存</button>
+        </div>
+      `);
+      setTimeout(()=>document.getElementById('summaryText').focus(),50);
+      document.getElementById('cancelSummary').onclick = closeModal;
+      document.getElementById('saveSummary').onclick = () => {
+        const text = document.getElementById('summaryText').value.trim();
+        if (text) db.dailySummary[d] = text;
+        else delete db.dailySummary[d];
+        save(); closeModal(); renderView(); toast('已保存');
+      };
+    }
+
+    // ===== Video modal =====
+    function openVideoModal(video) {
+      const editing = !!video;
+      openModal(`
+        <h3>${editing?'编辑':'新建'}视频分析</h3>
+        <div class="field">
+          <label>类别</label>
+          <select class="input" id="vType">
+            ${VIDEO_CATS.map(c=>`<option value="${c.id}" ${editing&&video.type===c.id?'selected':''}>${c.emoji} ${c.label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>平台</label>
+          <select class="input" id="vPlatform">
+            ${['小红书','抖音','视频号','B站','快手','其他'].map(p=>`<option value="${p}" ${editing&&video.platform===p?'selected':''}>${p}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>视频标题 / 链接</label>
+          <input class="input" id="vTitle" placeholder="视频标题或链接" value="${editing?video.title||'':''}" />
+        </div>
+        <div class="field">
+          <label>爆点分析</label>
+          <textarea class="textarea" id="vAnalysis" placeholder="为什么这个视频会爆？选题/标题/节奏/情绪...">${editing?video.analysis||'':''}</textarea>
+        </div>
+        <div class="field">
+          <label>可借鉴的选题</label>
+          <textarea class="textarea" id="vTopic" placeholder="从这个视频可以衍生出什么选题？">${editing?video.topic||'':''}</textarea>
+        </div>
+        <div class="field">
+          <label>拍摄思路 / 备注</label>
+          <textarea class="textarea" id="vNotes" placeholder="拍摄方向、脚本要点、素材...">${editing?video.notes||'':''}</textarea>
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelVideo">取消</button>
+          <button class="btn btn-primary" id="saveVideo">保存</button>
+        </div>
+      `);
+      document.getElementById('cancelVideo').onclick = closeModal;
+      document.getElementById('saveVideo').onclick = () => {
+        const data = {
+          type: document.getElementById('vType').value,
+          platform: document.getElementById('vPlatform').value,
+          title: document.getElementById('vTitle').value.trim(),
+          analysis: document.getElementById('vAnalysis').value.trim(),
+          topic: document.getElementById('vTopic').value.trim(),
+          notes: document.getElementById('vNotes').value.trim(),
+        };
+        if (!data.title && !data.analysis) { toast('请至少填写标题或爆点分析'); return; }
+        if (editing) {
+          Object.assign(video, data);
+        } else {
+          db.videos.push({ id: uid(), date: today(), ...data });
+        }
+        save(); closeModal(); renderView(); toast('已保存');
+      };
+    }
+
+    // ===== Word modal (english/spanish) =====
+    function openWordModal() {
+      openModal(`
+        <h3>添加单词</h3>
+        <div class="field"><label>单词</label>
+          <input class="input" id="wWord" placeholder="如：serendipity" /></div>
+        <div class="field"><label>释义</label>
+          <input class="input" id="wMeaning" placeholder="如：意外发现美好事物的能力" /></div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelWord">取消</button>
+          <button class="btn btn-primary" id="saveWord">保存</button>
+        </div>
+      `);
+      setTimeout(()=>document.getElementById('wWord').focus(),50);
+      document.getElementById('cancelWord').onclick = closeModal;
+      const saveW = () => {
+        const word = document.getElementById('wWord').value.trim();
+        const meaning = document.getElementById('wMeaning').value.trim();
+        if (!word) { toast('请输入单词'); return; }
+        const d = today();
+        if (!db[currentView][d]) db[currentView][d] = [];
+        db[currentView][d].push({ id: uid(), word, meaning, done:false });
+        save(); closeModal(); renderView(); toast('已添加');
+      };
+      document.getElementById('saveWord').onclick = saveW;
+      document.getElementById('wWord').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('wMeaning').focus(); });
+      document.getElementById('wMeaning').addEventListener('keydown', e=>{ if(e.key==='Enter') saveW(); });
+    }
+
+    // ===== Weight modal =====
+    function openWeightModal(weight) {
+      const editing = !!weight;
+      openModal(`
+        <h3>${editing?'编辑':'记录'}体重</h3>
+        <div class="field"><label>日期</label>
+          <input class="input" id="wDate" type="date" value="${editing?weight.date:today()}" /></div>
+        <div class="field"><label>体重 (kg)</label>
+          <input class="input" id="wWeight" type="number" step="0.1" placeholder="如：55.2" value="${editing?weight.weight:''}" /></div>
+        <div class="field"><label>备注</label>
+          <textarea class="textarea" id="wNote" placeholder="如：运动后/饭前" style="min-height:60px">${editing?weight.note||'':''}</textarea></div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelWeight">取消</button>
+          <button class="btn btn-primary" id="saveWeight">保存</button>
+        </div>
+      `);
+      setTimeout(()=>document.getElementById('wWeight').focus(),50);
+      document.getElementById('cancelWeight').onclick = closeModal;
+      document.getElementById('saveWeight').onclick = () => {
+        const date = document.getElementById('wDate').value;
+        const w = parseFloat(document.getElementById('wWeight').value);
+        const note = document.getElementById('wNote').value.trim();
+        if (!w || w <= 0) { toast('请输入体重'); return; }
+        if (editing) {
+          weight.date = date; weight.weight = w; weight.note = note;
+        } else {
+          db.weight.push({ id: uid(), date, weight: w, note });
+        }
+        save(); closeModal(); renderView(); toast('已保存');
+      };
+    }
+
+    // ===== Period modal =====
+    function openPeriodModal(period) {
+      const editing = !!period;
+      openModal(`
+        <h3>${editing?'编辑':'记录'}月经</h3>
+        <div class="field"><label>日期</label>
+          <input class="input" id="pDate" type="date" value="${editing?period.date:today()}" /></div>
+        <div class="field"><label>类型</label>
+          <select class="input" id="pType">
+            <option value="start" ${editing&&period.type==='start'?'selected':''}>🩸 来潮</option>
+            <option value="end" ${editing&&period.type==='end'?'selected':''}>🟢 结束</option>
+          </select></div>
+        <div class="field"><label>量</label>
+          <select class="input" id="pFlow">
+            <option value="">不记录</option>
+            <option value="少" ${editing&&period.flow==='少'?'selected':''}>少</option>
+            <option value="中" ${editing&&period.flow==='中'?'selected':''}>中</option>
+            <option value="多" ${editing&&period.flow==='多'?'selected':''}>多</option>
+          </select></div>
+        <div class="field"><label>症状</label>
+          <input class="input" id="pSymptoms" placeholder="如：痛经/腰酸/疲惫" value="${editing?period.symptoms||'':''}" /></div>
+        <div class="field"><label>备注</label>
+          <textarea class="textarea" id="pNote" placeholder="其他备注" style="min-height:60px">${editing?period.note||'':''}</textarea></div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelPeriod">取消</button>
+          <button class="btn btn-primary" id="savePeriod">保存</button>
+        </div>
+      `);
+      document.getElementById('cancelPeriod').onclick = closeModal;
+      document.getElementById('savePeriod').onclick = () => {
+        const date = document.getElementById('pDate').value;
+        const type = document.getElementById('pType').value;
+        const flow = document.getElementById('pFlow').value;
+        const symptoms = document.getElementById('pSymptoms').value.trim();
+        const note = document.getElementById('pNote').value.trim();
+        if (editing) {
+          Object.assign(period, { date, type, flow, symptoms, note });
+        } else {
+          db.period.push({ id: uid(), date, type, flow, symptoms, note });
+        }
+        save(); closeModal(); renderView(); toast('已保存');
+      };
+    }
+
+    // ===== Dousha growth modal =====
+    function openDoushaGrowthModal(growth) {
+      const editing = !!growth;
+      openModal(`
+        <h3>${editing?'编辑':'记录'}豆沙体重身高</h3>
+        <div class="field"><label>日期</label>
+          <input class="input" id="dgDate" type="date" value="${editing?growth.date:today()}" /></div>
+        <div class="field"><label>体重 (kg)</label>
+          <input class="input" id="dgWeight" type="number" step="0.1" placeholder="如：12.5" value="${editing?growth.weight:''}" /></div>
+        <div class="field"><label>身高 (cm)</label>
+          <input class="input" id="dgHeight" type="number" step="0.1" placeholder="如：85.0" value="${editing?growth.height:''}" /></div>
+        <div class="field"><label>备注</label>
+          <textarea class="textarea" id="dgNote" placeholder="如：体检/生病" style="min-height:60px">${editing?growth.note||'':''}</textarea></div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelDG">取消</button>
+          <button class="btn btn-primary" id="saveDG">保存</button>
+        </div>
+      `);
+      document.getElementById('cancelDG').onclick = closeModal;
+      document.getElementById('saveDG').onclick = () => {
+        const date = document.getElementById('dgDate').value;
+        const w = parseFloat(document.getElementById('dgWeight').value);
+        const h = parseFloat(document.getElementById('dgHeight').value);
+        const note = document.getElementById('dgNote').value.trim();
+        if (!w && !h) { toast('请输入体重或身高'); return; }
+        if (editing) {
+          growth.date = date; growth.weight = w||0; growth.height = h||0; growth.note = note;
+        } else {
+          db.doushaGrowth.push({ id: uid(), date, weight: w||0, height: h||0, note });
+        }
+        save(); closeModal(); renderView(); toast('已保存');
+      };
+    }
+
+    // ===== Dousha daily modal =====
+    function openDoushaDailyModal(dateStr) {
+      const d = dateStr || today();
+      const existing = db.doushaDaily[d] || '';
+      openModal(`
+        <h3>豆沙每日记录</h3>
+        <div class="field"><label>${fmtDate(d)}</label>
+          <textarea class="textarea" id="ddText" placeholder="记录豆沙今天的情况：饮食、睡眠、情绪、活动..." style="min-height:160px">${existing}</textarea></div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelDD">取消</button>
+          <button class="btn btn-primary" id="saveDD">保存</button>
+        </div>
+      `);
+      setTimeout(()=>document.getElementById('ddText').focus(),50);
+      document.getElementById('cancelDD').onclick = closeModal;
+      document.getElementById('saveDD').onclick = () => {
+        const text = document.getElementById('ddText').value.trim();
+        if (text) db.doushaDaily[d] = text;
+        else delete db.doushaDaily[d];
+        save(); closeModal(); renderView(); toast('已保存');
+      };
+    }
+
+    // ===== Dousha checkin modal (add task) =====
+    function openDoushaCheckinModal() {
+      openModal(`
+        <h3>添加打卡项</h3>
+        <div class="field">
+          <input class="input" id="dcText" placeholder="如：读绘本 15 分钟" />
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelDC">取消</button>
+          <button class="btn btn-primary" id="saveDC">保存</button>
+        </div>
+      `);
+      setTimeout(()=>document.getElementById('dcText').focus(),50);
+      document.getElementById('cancelDC').onclick = closeModal;
+      const save = () => {
+        const text = document.getElementById('dcText').value.trim();
+        if (!text) { toast('内容不能为空'); return; }
+        const d = today();
+        if (!db.doushaCheckin[d]) db.doushaCheckin[d] = [];
+        db.doushaCheckin[d].push({ id: uid(), text, done:false });
+        save(); closeModal(); renderView(); toast('已添加');
+      };
+      document.getElementById('saveDC').onclick = save;
+      document.getElementById('dcText').addEventListener('keydown', e=>{ if(e.key==='Enter') save(); });
+    }
+
+    // ===== Add button (topbar) =====
+    document.getElementById('addBtn').onclick = () => {
+      if (currentView==='plan') openTaskModal();
+      else if (currentView==='inspiration') openEntryModal('inspiration','记录灵感');
+      else if (currentView==='gratitude') openEntryModal('gratitude','记录感恩');
+      else if (currentView==='weekly'||currentView==='monthly') openReportModal();
+      else if (currentView==='habit') openHabitModal();
+      else if (currentView==='videos') openVideoModal();
+      else if (currentView==='english'||currentView==='spanish') openWordModal();
+      else if (currentView==='weight') openWeightModal();
+      else if (currentView==='period') openPeriodModal();
+      else if (currentView==='dousha-fun') openEntryModal('doushaFun','记录豆沙趣事');
+      else if (currentView==='dousha-daily') openDoushaDailyModal();
+      else if (currentView==='dousha-checkin') openDoushaCheckinModal();
+      else if (currentView==='dousha-growth') openDoushaGrowthModal();
+    };
+
+    function openTaskModal() {
+      openModal(`
+        <h3>新增任务</h3>
+        <div class="field">
+          <input class="input" id="taskText" placeholder="输入任务内容..." />
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelTask">取消</button>
+          <button class="btn btn-primary" id="saveTask">保存</button>
+        </div>
+      `);
+      setTimeout(()=>document.getElementById('taskText').focus(),50);
+      document.getElementById('cancelTask').onclick = closeModal;
+      const save = () => {
+        const text = document.getElementById('taskText').value.trim();
+        if (!text) { toast('内容不能为空'); return; }
+        const d = today();
+        if (!db.tasks[d]) db.tasks[d] = [];
+        db.tasks[d].push({ id: uid(), text, done:false });
+        save(); closeModal(); renderView(); toast('已添加');
+      };
+      document.getElementById('saveTask').onclick = save;
+      document.getElementById('taskText').addEventListener('keydown', e=>{ if(e.key==='Enter') save(); });
+    }
+
+    function openHabitModal() {
+      openModal(`
+        <h3>新增习惯</h3>
+        <div class="field"><label>习惯名称</label>
+          <input class="input" id="hName" placeholder="如：早睡早起" /></div>
+        <div class="field"><label>图标 (emoji)</label>
+          <input class="input" id="hEmoji" placeholder="🌙" value="🌙" /></div>
+        <div class="modal-btns">
+          <button class="btn btn-cancel" id="cancelH">取消</button>
+          <button class="btn btn-primary" id="saveH">保存</button>
+        </div>
+      `);
+      document.getElementById('cancelH').onclick = closeModal;
+      document.getElementById('saveH').onclick = () => {
+        const name = document.getElementById('hName').value.trim();
+        const emoji = document.getElementById('hEmoji').value.trim() || '✅';
+        if (!name) { toast('请输入名称'); return; }
+        db.habits.push({ id: uid(), name, emoji, target:1, done:0 });
+        save(); closeModal(); renderView(); toast('已添加');
+      };
+    }
+
+    // ===== Toast =====
+    let toastTimer;
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=>t.classList.remove('show'), 1600);
+    }
+
+    // ===== Init =====
+    document.getElementById('menuBtn').onclick = () => {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+    };
+    document.getElementById('overlay').onclick = () => {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+    };
+
+    document.querySelectorAll('.bn-item').forEach(b => {
+      b.onclick = () => switchView(b.dataset.view);
+    });
+
+    document.getElementById('todayDate').textContent = fmtDate(today());
+    document.getElementById('userName').textContent = db.user.name;
+    document.getElementById('avatar').textContent = db.user.name[0];
+
+    renderNav();
+    renderView();
+
+    // PWA install prompt
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installBtn').style.display = 'flex';
+      toast('可以安装 APP 了！点击顶部 ⬇ 按钮');
+    });
+    document.getElementById('installBtn').onclick = () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          deferredPrompt = null;
+          document.getElementById('installBtn').style.display = 'none';
+        });
+      } else {
+        switchView('me');
+      }
+    };
+    window.addEventListener('appinstalled', () => {
+      document.getElementById('installBtn').style.display = 'none';
+      toast('安装成功！');
+    });
+
+    // PWA service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    }
+  </script>
+</body>
+</html>
